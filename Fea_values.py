@@ -40,7 +40,6 @@ for n in n_values:
                 epsilon_list = []
                 T_PG_list    = []
                 T_PM_list    = []
-                D_list       = []
                 
                 # Start with an initial guess for epsilon
                 epsilon_guess = 0.0
@@ -65,13 +64,9 @@ for n in n_values:
                     T_pg = K_PG * eps_sol
                     T_pm = K_PM * (eps_sol ** n)
                     
-                    # Compute new diameter
-                    D_current = D_0 * np.sqrt(max(eps_sol + 1, 1e-14))
-                    
                     epsilon_list.append(eps_sol)
                     T_PG_list.append(T_pg)
                     T_PM_list.append(T_pm)
-                    D_list.append(D_current)
                 
                 # Store in dictionary
                 key = (n, K_PG, K_PM, D_0)
@@ -80,18 +75,16 @@ for n in n_values:
                     'epsilon': np.array(epsilon_list),
                     'T_PG':    np.array(T_PG_list),
                     'T_PM':    np.array(T_PM_list),
-                    'D':       np.array(D_list),
                 }
 
 # ------------------------------------------------------------------------------
-# 5) Make one figure with four subplots in a 2x2 grid
+# 5) Make one figure with three subplots in a 2x1 grid (modified)
 # ------------------------------------------------------------------------------
-fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10, 8))
+fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(8, 8))
 
-ax_T_PG     = axes[0, 0]
-ax_T_PM     = axes[0, 1]
-ax_epsilon  = axes[1, 0]
-ax_diameter = axes[1, 1]
+ax_T_PG    = axes[0]
+ax_T_PM    = axes[1]
+ax_epsilon = axes[1]  # We'll remove this line since we're not using it
 
 # We will collect line handles and labels from *all* subplots,
 # then make ONE combined legend at the end.
@@ -136,12 +129,6 @@ for (n, K_PG, K_PM, D_0), data in results.items():
         color=c, linestyle=ls, marker=mk, label=label_str
     )
     
-    # Plot diameter (in μm)
-    line_d = ax_diameter.plot(
-        P_MPa, data['D'] * 1e6,
-        color=c, linestyle=ls, marker=mk, label=label_str
-    )
-    
     # Each 'plot(...)' returns a list of line handles (usually just 1).
     # We'll collect the handle + the label from the first line in each subplot.
     # But truly we only need one line per combo to represent the label.
@@ -152,7 +139,7 @@ for (n, K_PG, K_PM, D_0), data in results.items():
     combo_idx += 1
 
 # ------------------------------------------------------------------------------
-# 6) Configure each subplot
+# 6) Configure each subplot (modified)
 # ------------------------------------------------------------------------------
 # Peptidoglycan Tension
 ax_T_PG.set_xlabel('Pressure (MPa)')
@@ -166,24 +153,20 @@ ax_T_PM.set_ylabel('PM Tension (kN/m)')
 ax_T_PM.set_title('Plasma Membrane Tension vs. Pressure')
 ax_T_PM.grid(True)
 
-# Strain
-ax_epsilon.set_xlabel('Pressure (MPa)')
-ax_epsilon.set_ylabel('Strain (dimensionless)')
-ax_epsilon.set_title('Strain vs. Pressure')
-ax_epsilon.grid(True)
-
+# Remove diameter subplot configuration
+'''
 # Diameter
 ax_diameter.set_xlabel('Pressure (MPa)')
 ax_diameter.set_ylabel('Diameter (µm)')
 ax_diameter.set_title('Diameter vs. Pressure')
 ax_diameter.grid(True)
+'''
 
 # ------------------------------------------------------------------------------
 # 7) Create ONE combined legend for all lines
 #    Place it outside the plot area; multiple columns so it doesn't get too tall.
 # ------------------------------------------------------------------------------
 fig.tight_layout()
-# Move the right edge of the subplots left to leave room for the legend
 fig.subplots_adjust(right=0.62)
 
 fig.legend(
@@ -205,10 +188,9 @@ if example_key in results:
     ex_data = results[example_key]
     P_MPa_ex = ex_data['P'] / 1e6
     print("\nExample data for", example_key, ":")
-    for Pval, eps, Tpg, Tpm, Dval in zip(
-        P_MPa_ex, ex_data['epsilon'], ex_data['T_PG'], ex_data['T_PM'], ex_data['D']
+    for Pval, eps, Tpg, Tpm in zip(
+        P_MPa_ex, ex_data['epsilon'], ex_data['T_PG'], ex_data['T_PM']
     ):
         print(f"  P={Pval:.2f} MPa | ε={eps:.4f} | "
               f"PG Tension={Tpg/1e3:.5f} kN/m | "
-              f"PM Tension={Tpm/1e3:.5f} kN/m | "
-              f"D={Dval*1e6:.4f} µm")
+              f"PM Tension={Tpm/1e3:.5f} kN/m")
