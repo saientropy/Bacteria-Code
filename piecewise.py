@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
-
+# Need to define individual properties first and model on comsol to understand the modelling bit
 # ========== 1) MODEL PARAMETERS ==========
 K_PG   = 1.0      # "Stiffness" for PG layer
 K_PM   = 20.0     # "Stiffness" for PM (once engaged)
