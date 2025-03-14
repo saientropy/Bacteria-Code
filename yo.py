@@ -28,7 +28,7 @@ def add_wobble(x, y, amplitude=0.2, num_points=200):
 plt.figure(figsize=(5, 5))
 
 # Define the common reduced angle
-angle = 45  # Reduced angle for both curves
+angle = 68  # Reduced angle for both curves
 
 # Define the PM (Plasma Membrane) curve
 pm_x = [0, 5, 20]  # X-axis (Pressure)
@@ -36,17 +36,17 @@ pm_y = [0, 0.5, 0.5 + np.tan(np.radians(angle)) * (20 - 5)]  # Y-axis (Tension)
 
 # Define the PG (Peptidoglycan) curve
 pg_x = [0, 5, 20]  # X-axis (Pressure)
-pg_y = [0, 10, 10 + np.tan(np.radians(angle)) * (20 - 5)]  # Y-axis (Tension)
+pg_y = [0, 16, 10 + np.tan(np.radians(angle)) * (20 - 5)]  # Y-axis (Tension)
 pg_y[2] = 10 + (20 - 5) * np.tan(np.radians(angle))  # Adjusting PG tilt correctly
 
 # Define the additional linear extension ("Total")
 ext_x = [0, 5, 20]  # X-axis (Pressure)
-ext_y = [0, 11, 11 + (20 - 5) * ((11 - 0) / 5)]  # Linear extension based on slope
+ext_y = [0, 18, 11 + (20 - 5) * ((17 - 0) / 5)]  # Linear extension based on slope
 
 # Generate wobbly versions for all curves with amplitude=0.2
-x_pm_w, y_pm_w = add_wobble(pm_x, pm_y, amplitude=0.2)
-x_pg_w, y_pg_w = add_wobble(pg_x, pg_y, amplitude=0.2)
-x_ext_w, y_ext_w = add_wobble(ext_x, ext_y, amplitude=0.2)
+x_pm_w, y_pm_w = add_wobble(pm_x, pm_y, amplitude=0.3)
+x_pg_w, y_pg_w = add_wobble(pg_x, pg_y, amplitude=0.3)
+x_ext_w, y_ext_w = add_wobble(ext_x, ext_y, amplitude=0.1)
 
 # Conversion factors: 
 #   x: from 0–20 to 0–10 atm → factor_x = 10/20 = 0.5
@@ -70,7 +70,7 @@ plt.plot(x_pg_w, y_pg_w, label='T_Peptidoglycan (PG)', linestyle='-', linewidth=
 plt.plot(x_ext_w, y_ext_w, label='Total', linestyle='--', linewidth=2, color='red')
 
 # Add a horizontal line at y = 1 for rupture tension
-plt.axhline(y=1, color='black', linestyle='--', linewidth=1, label='Rupture Tension')
+plt.axhline(y=1.5, color='black', linestyle='--', linewidth=1, label='Rupture Tension')
 
 # Set new axis limits for the converted units
 plt.xlim(0, 10)
