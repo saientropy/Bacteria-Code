@@ -25,7 +25,7 @@ def add_wobble(x, y, amplitude=0.2, num_points=200):
 
 plt.figure(figsize=(5, 5))
 
-angle = 50  # Reduced angle for both curves
+angle = 68  # Reduced angle for both curves
 
 # PM (Plasma Membrane) curve
 pm_x = [0, 5, 20]  
@@ -33,12 +33,12 @@ pm_y = [0, 0.5, 0.5 + np.tan(np.radians(angle)) * (20 - 5)]
 
 # PG (Peptidoglycan) curve
 pg_x = [0, 5, 20]  
-pg_y = [0, 10, 10 + np.tan(np.radians(angle)) * (20 - 5)]
+pg_y = [0, 16, 10 + np.tan(np.radians(angle)) * (20 - 5)]
 pg_y[2] = 10 + (20 - 5) * np.tan(np.radians(angle))  # Adjusting PG tilt
 
 # Generate wobbly versions
-x_pm_w, y_pm_w = add_wobble(pm_x, pm_y, amplitude=0.2)
-x_pg_w, y_pg_w = add_wobble(pg_x, pg_y, amplitude=0.2)
+x_pm_w, y_pm_w = add_wobble(pm_x, pm_y, amplitude=0.3)
+x_pg_w, y_pg_w = add_wobble(pg_x, pg_y, amplitude=0.3)
 
 # Scale tension values (y) from original 0–30 to 0–3 (in 10^-2 N/m units)
 factor_y = 3 / 30
@@ -52,14 +52,14 @@ x_pm_w = 2 + (x_pm_w / 20) * (4 - 2)
 x_pg_w = 2 + (x_pg_w / 20) * (4 - 2)
 
 # Plot the PM and PG curves
-plt.plot(x_pm_w, y_pm_w, label='T_Plasma Membrane- thin shell', linestyle='-', linewidth=2)
-plt.plot(x_pg_w, y_pg_w, label='T_Peptidoglycan (thickness 6 nm)', linestyle='-', linewidth=2)
+plt.plot(x_pm_w, y_pm_w, label='T_PM- thin shell', linestyle='-', linewidth=2)
+plt.plot(x_pg_w, y_pg_w, label='T_PG (t = 6 nm)', linestyle='-', linewidth=2)
 
 # Add a horizontal line at y = 1 for rupture tension
-plt.axhline(y=1, color='black', linestyle='--', linewidth=1, label='Rupture Tension ?')
+plt.axhline(y=1.5, color='black', linestyle='--', linewidth=1, label='Rupture Tension ')
 
 # Set axis limits: x from 2 to 4 µm; y from 0 to 3 (tension in 10^-2 N/m)
-plt.xlim(2, 4)
+plt.xlim(2, 3.5)
 plt.ylim(0, 3)
 
 plt.xlabel("Internal diameter of PG layer (µm)")
