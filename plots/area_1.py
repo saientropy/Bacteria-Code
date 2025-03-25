@@ -25,7 +25,7 @@ def add_wobble(x, y, amplitude=0.2, num_points=200):
 
 plt.figure(figsize=(5, 5))
 
-angle = 68  # Reduced angle for both curves
+angle = 78  # Reduced angle for both curves
 
 # PM (Plasma Membrane) curve
 pm_x = [0, 5, 20]  
