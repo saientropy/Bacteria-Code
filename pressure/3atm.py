@@ -4,12 +4,12 @@ import math
 
 # User variables:
 pm_angle_deg = 55 # PM curve's takeoff angle in degrees
-noise_amplitude = 0.03 # Adjust this value for more or less "wobble"
+noise_amplitude = 0.032#Adjust this value for more or less "wobble"
 
 pm_slope = math.tan(math.radians(pm_angle_deg))  # Slope from the specified angle
 
 # Define the breakpoint for "take off"
-x_break = 2.5
+x_break = 3
 
 # Define the x-axis range (0 to 4 atm)
 x_max = 4
