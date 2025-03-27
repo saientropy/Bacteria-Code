@@ -1,59 +1,127 @@
-import numpy as np
+import io
+import os
+import sys
+import subprocess
+import matplotlib
+matplotlib.use('Agg')  # Force non-interactive backend
 import matplotlib.pyplot as plt
-import math
+import matplotlib.image as mpimg
 
-# User variables:
-pm_angle_deg = 55         # PM curve's takeoff angle in degrees
-noise_amplitude = 0.02    # Adjust this value for more or less "wobble"
-scale_factor = 10         # Scaling factor for PM curve
+# List scripts in order
+scripts = [
+    "area/25area.py",
+    "area/30area.py", 
+    "area/35area.py",
+    "pressure/2atm.py",
+    "pressure/2_5atm.py",
+    "pressure/3atm.py"
+]
 
-# Compute effective slope for PM (after x = 20 micron²)
-pm_slope = math.tan(math.radians(pm_angle_deg)) / scale_factor
+# Create temp directory
+os.makedirs("temp_figures", exist_ok=True)
 
-# Define the x-axis range (15 to 40 micron²)
-x_min = 15
-x_max = 40
-x_values = np.linspace(x_min, x_max, 300)
+# Create a wrapper script that will run the plot scripts and capture their output
+wrapper_script = """
+import sys
+import os
+import matplotlib
+matplotlib.use('Agg') # Non-interactive backend
+import matplotlib.pyplot as plt
 
-# -------------------------
-# PM Curve Definition:
-# -------------------------
-# For x < 20, PM = 0.
-# For x >= 20, PM = pm_slope * (x - 20)
-x_takeoff = 20
-pm_y_values = np.where(x_values < x_takeoff, 0, pm_slope * (x_values - x_takeoff))
-pm_y_noisy = pm_y_values + np.random.normal(0, noise_amplitude, pm_y_values.shape)
+# Store original show function
+original_show = plt.show
 
-# -------------------------
-# PG Curve Definition:
-# -------------------------
-# PG is defined as a linear function from (15,0) to (40,2)
-pg_start = 0
-pg_end = 2
-pg_slope = (pg_end - pg_start) / (x_max - x_min)  # slope = (2-0)/(40-15) = 2/25 = 0.08
-pg_y_values = pg_start + pg_slope * (x_values - x_min)
-pg_y_noisy = pg_y_values + np.random.normal(0, noise_amplitude, pg_y_values.shape)
+# Replace plt.show() with our capturing function
+def capture_show(*args, **kwargs):
+    fig = plt.gcf() # Get current figure
+    fig.savefig(sys.argv[2], dpi=600)
+    print(f"Captured and saved figure to {sys.argv[2]}")
+    return original_show(*args, **kwargs)
 
-# -------------------------
-# Total Curve Definition:
-# -------------------------
-# Total is the sum of the noisy PG and PM curves at each x
-total_y_noisy = pg_y_noisy + pm_y_noisy
+plt.show = capture_show
 
-# -------------------------
-# Plotting:
-# -------------------------
-plt.figure(figsize=(8,6))
-plt.plot(x_values, pg_y_noisy, label="PG", color="black", linewidth=1)
-plt.plot(x_values, pm_y_noisy, label="PM", color="blue", linewidth=1)
-plt.plot(x_values, total_y_noisy, label="Total", color="red", linewidth=1)
-plt.axhline(y=1.5, color="green", linestyle="--", linewidth=1, label="rupture tension")
+# Run the target script
+try:
+    script_path = sys.argv[1]
+    
+    # Add script directory to path
+    script_dir = os.path.dirname(script_path)
+    if script_dir:
+        sys.path.insert(0, script_dir)
+    
+    # Execute the script
+    with open(script_path, 'r') as f:
+        exec(f.read(), {'__file__': script_path, '__name__': '__main__'})
+    
+    # If no figure was explicitly shown, check if any were created
+    if plt.get_fignums():
+        plt.gcf().savefig(sys.argv[2], dpi=600)
+        print(f"Saved figure to {sys.argv[2]}")
+except Exception as e:
+    print(f"Error executing {script_path}: {e}")
+"""
 
-plt.xlabel("Internal Surface area of the PG [micron²]")
-plt.ylabel("Tension [ 10^2 N/m]")
-plt.title("PG (Linear) and Total (PG+PM) with PM Takeoff at 20 micron²")
-plt.xlim(x_min, x_max)
-plt.ylim(0, 10)
-plt.legend()
-plt.grid(True)
+# Write the wrapper script to a file
+wrapper_path = os.path.join("temp_figures", "wrapper.py")
+with open(wrapper_path, 'w') as f:
+    f.write(wrapper_script)
+
+# Create the main figure with subplots
+fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(15, 9))
+
+# Process each script using the wrapper
+for i, script_path in enumerate(scripts):
+    print(f"Processing {script_path}...")
+    
+    # Define output path for this figure
+    output_path = os.path.join("temp_figures", f"figure_{i}.png")
+    
+    # Run the wrapper script with the target script
+    result = subprocess.run(
+        [sys.executable, wrapper_path, script_path, output_path],
+        capture_output=True,
+        text=True
+    )
+    
+    # Print output for debugging
+    print(result.stdout)
+    if result.stderr:
+        print(f"Error: {result.stderr}")
+    
+    # Load the saved figure if it exists
+    if os.path.exists(output_path):
+        img = mpimg.imread(output_path)
+        
+        # Place in the appropriate subplot
+        row, col = divmod(i, 3)
+        axes[row, col].imshow(img)
+        axes[row, col].axis("off")
+        
+        # Removed the subplot title as requested
+        
+    else:
+        print(f"Warning: No figure was created for {script_path}")
+
+# Add global title and row labels
+fig.suptitle("Tension vs Surface area", fontsize=16)
+#fig.text(0.5, 0.52, "Area Analysis (25/30/35)", ha='center', fontsize=14)
+fig.text(0.5, 0.02, "Tension vs Internal Pressure", ha='center', fontsize=14)
+
+# Adjust layout and save
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+fig.savefig("combined_plots.png", dpi=600, bbox_inches='tight')
+print("Saved combined_plots.png")
+
+# Clean up temporary files
+for file in os.listdir("temp_figures"):
+    try:
+        os.remove(os.path.join("temp_figures", file))
+    except:
+        pass
+try:
+    os.rmdir("temp_figures")
+except:
+    pass
+
+# Display the result
 plt.show()
