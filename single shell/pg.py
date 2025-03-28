@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # User variables:
 noise_amplitude = 0.01     # Adjust this value for more or less "wobble"
-pg_slope = 4.5/2            # Linear slope for PG across entire domain (0–4 atm)
+pg_slope = 5/2            # Linear slope for PG across entire domain (0–4 atm)
 
 # Define the x-axis range (0 to 4 atm)
 x_max = 4

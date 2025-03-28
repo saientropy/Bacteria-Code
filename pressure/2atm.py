@@ -4,7 +4,7 @@ import math
 
 # User variables:
 pm_angle_deg = 55 # PM curve's takeoff angle in degrees
-noise_amplitude = 0.02 # Adjust this value for more or less "wobble"
+noise_amplitude = 0.027 # Adjust this value for more or less "wobble"
 
 pm_slope = math.tan(math.radians(pm_angle_deg))  # Slope from the specified angle
 
