@@ -52,19 +52,19 @@ total_y_code3_noisy = total_y_code3 + np.random.normal(0, noise_amplitude_code3,
 plt.figure(figsize=(8, 6))
 
 # Plot Code 1 PG (linear)
-plt.plot(x_values, pg_y_code1_noisy, label="PG (linear) [Code 1]",
+plt.plot(x_values, pg_y_code1_noisy, label="PG (Single Membrane)",
          linestyle="--", linewidth=1, color="magenta")
 
 # Plot Code 2 PM curve
-plt.plot(x_values, pm_y_code2_noisy, label="PM [Code 2]",
+plt.plot(x_values, pm_y_code2_noisy, label="PM (Single Membrane)",
          linestyle=":", linewidth=1, color="orange")
 
 # Plot Code 3 curves
-plt.plot(x_values, pm_y_code3_noisy, label="PM [Code 3]",
+plt.plot(x_values, pm_y_code3_noisy, label="PM (FEA FULL)",
          color="blue", linewidth=1)
-plt.plot(x_values, pg_y_code3_noisy, label="PG [Code 3]",
+plt.plot(x_values, pg_y_code3_noisy, label="PG (FEA FULL)",
          color="black", linewidth=1)
-plt.plot(x_values, total_y_code3_noisy, label="Total [Code 3]",
+plt.plot(x_values, total_y_code3_noisy, label="Total (FEA FULL)",
          color="red", linewidth=1)
 
 # Plot rupture tension horizontal line at y = 1.5
