@@ -90,7 +90,7 @@ ax.set_title('Vesicle Tension Animation')
 # Function to update the animation
 def update(frame):
     # Clear previous plots
-    ax.collections = []
+    ax.clear()
     
     # Update radius based on current frame (pressure)
     inner_radius = radii[frame]
@@ -104,18 +104,28 @@ def update(frame):
     inner_x, inner_y, inner_z, inner_colors = create_sphere(inner_radius, pg_tension, inner_layer_thickness)
     outer_x, outer_y, outer_z, outer_colors = create_sphere(outer_radius, pm_tension, outer_layer_thickness)
     
+    # Create color arrays for the surfaces
+    inner_color_array = np.ones_like(inner_x) * pg_tension/10
+    outer_color_array = np.ones_like(outer_x) * pm_tension/10
+    
     # Plot updated spheres
-    inner_plot = ax.plot_surface(inner_x, inner_y, inner_z, facecolors=cmap(pg_tension/10), alpha=0.7)
-    outer_plot = ax.plot_surface(outer_x, outer_y, outer_z, facecolors=cmap(pm_tension/10), alpha=0.3)
+    inner_plot = ax.plot_surface(inner_x, inner_y, inner_z, facecolors=cmap(inner_color_array), alpha=0.7)
+    outer_plot = ax.plot_surface(outer_x, outer_y, outer_z, facecolors=cmap(outer_color_array), alpha=0.3)
     
     # Update pressure text
-    pressure_text.set_text(f"Pressure: {pressures[frame]:.2f} atm")
+    pressure_text = ax.text2D(0.05, 0.95, f"Pressure: {pressures[frame]:.2f} atm", transform=ax.transAxes)
     
     # Set consistent axis limits
     max_radius = max(radii) + outer_layer_thickness + 0.002
     ax.set_xlim(-max_radius, max_radius)
     ax.set_ylim(-max_radius, max_radius)
     ax.set_zlim(-max_radius, max_radius)
+    
+    # Set axis labels
+    ax.set_xlabel('X [μm]')
+    ax.set_ylabel('Y [μm]')
+    ax.set_zlabel('Z [μm]')
+    ax.set_title('Vesicle Tension Animation')
     
     return inner_plot, outer_plot, pressure_text
 
