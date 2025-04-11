@@ -15,8 +15,8 @@ pressure_data.columns = ['Pressure_atm', 'PM_Tension', 'PG_Tension', 'Total_Tens
 area_data.columns = ['Surface_Area', 'PG_Tension', 'PM_Tension', 'Total_Tension']
 
 # Constants for the bacteria model
-outer_thickness = 0.008  # 8nm converted to μm
-inner_thickness = 0.001  # 1nm converted to μm
+outer_thickness = 0.5  # 8nm converted to μm
+inner_thickness = 0.3 # 1nm converted to μm
 
 # Function to calculate radius from surface area (assuming spherical shape)
 def surface_area_to_radius(area):
@@ -122,13 +122,60 @@ fig = plt.figure(figsize=(14, 9))
 ax = fig.add_subplot(111, projection='3d')
 ax.set_position([0.25, 0.05, 0.70, 0.85])  # Move plot to the right to make space for info on left
 
-# Create DISTINCT colormaps for the two layers
-pg_cmap = cm.Blues_r     # Blue for PG layer (outer)
-pm_cmap = cm.Reds_r      # Red for PM layer (inner)
+# Add mouse controls for rotation and zoom
+from matplotlib.widgets import Slider
 
-# Set up normalization for the color scales
+# Enable tight layout
+fig.tight_layout()
+
+# Add a slider for adjusting layer thickness
+thickness_slider_ax = fig.add_axes([0.25, 0.01, 0.65, 0.02])  # [left, bottom, width, height]
+thickness_slider = Slider(
+    ax=thickness_slider_ax,
+    label='Slide to make thickness visible',
+    valmin=0.5,
+    valmax=5.0,
+    valinit=1.0,
+    valstep=0.1
+)
+
+# Define the original thickness values for reference
+orig_outer_thickness = outer_thickness
+orig_inner_thickness = inner_thickness
+
+# Global variable to track the current thickness multiplier
+current_thickness_multiplier = 1.0
+
+# Function to update thickness based on slider
+def update_thickness(val):
+    global outer_thickness, inner_thickness, current_thickness_multiplier
+    current_thickness_multiplier = val
+    outer_thickness = orig_outer_thickness * val
+    inner_thickness = orig_inner_thickness * val
+    update(current_frame)  # Update the visualization
+    fig.canvas.draw_idle()
+
+# Connect the slider to the update function
+thickness_slider.on_changed(update_thickness)
+
+# Global variable to track current frame
+current_frame = 0
+
+# Create DISTINCT colormaps for the two layers
+# Green-to-black gradient for PG layer
+pg_cmap = mpl.colors.LinearSegmentedColormap.from_list('GreenToBlack', ['forestgreen', 'darkgreen', 'black'])
+
+# Custom colormap for PM layer: white for values < 0.2, then red gradient
+# We'll create this using a ListedColormap with boundaries
+pm_colors = ['white']  # Start with white
+pm_colors.extend(cm.Reds_r(np.linspace(0, 1, 256)))  # Add red gradient colors
+
+# Create a BoundaryNorm to specify the ranges for each color
+pm_bounds = [0, 0.2, area_data['PM_Tension'].max()]
+pm_norm = mpl.colors.BoundaryNorm(pm_bounds, len(pm_colors))
+
+# Set up normalization for the PG color scale
 pg_norm = mpl.colors.Normalize(vmin=0, vmax=area_data['PG_Tension'].max())
-pm_norm = mpl.colors.Normalize(vmin=0, vmax=area_data['PM_Tension'].max())
 
 # Add information texts on the LEFT side
 pressure_text = fig.text(0.12, 0.9, "Pressure: 0.00 atm", 
@@ -143,7 +190,7 @@ surface_area_text = fig.text(0.12, 0.82, "Surface Area: 0.00 µ²",
                     ha='center')
 
 pg_tension_text = fig.text(0.12, 0.74, "PG Tension: 0.00 [10² N/m]", 
-                  fontsize=12, color='darkblue',
+                  fontsize=12, color='forestgreen',
                   bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3', edgecolor='gray'),
                   ha='center')
 
@@ -156,18 +203,34 @@ pm_tension_text = fig.text(0.12, 0.66, "PM Tension: 0.00 [10² N/m]",
 cax1 = fig.add_axes([0.12, 0.3, 0.03, 0.25])  # PG colorbar on LEFT
 cax2 = fig.add_axes([0.85, 0.3, 0.03, 0.25])  # PM colorbar on RIGHT
 
+# Create custom colorbar for PG tension
 cbar1 = plt.colorbar(cm.ScalarMappable(norm=pg_norm, cmap=pg_cmap), cax=cax1)
-cbar2 = plt.colorbar(cm.ScalarMappable(norm=pm_norm, cmap=pm_cmap), cax=cax2)
-
 cbar1.set_label('PG Tension [10² N/m]', fontsize=10)
+
+# Create custom colorbar for PM tension with white for values < 0.2
+# We need to create a custom colormap for this
+pm_levels = np.linspace(0, area_data['PM_Tension'].max(), 100)
+# Custom colormap: white for values < 0.2, then transition to red gradient
+white_red_cmap = mpl.colors.ListedColormap(['white'] + [cm.Reds_r(i) for i in np.linspace(0, 1, 99)])
+bounds = [0, 0.2] + list(np.linspace(0.2, area_data['PM_Tension'].max(), 99))
+norm = mpl.colors.BoundaryNorm(bounds, white_red_cmap.N)
+
+# Create the PM colorbar
+cbar2 = plt.colorbar(cm.ScalarMappable(norm=norm, cmap=white_red_cmap), cax=cax2)
 cbar2.set_label('PM Tension [10² N/m]', fontsize=10)
 
+# Add a text marker to show the 0.2 threshold on the PM colorbar
+cax2.text(1.5, 0.2 / area_data['PM_Tension'].max() * cax2.get_ylim()[1], 
+          "0.2", color='black', fontsize=8, ha='left', va='center')
+
 # Add layer labels on proper sides
-fig.text(0.12, 0.56, 'PG Layer (8nm)', fontsize=10, ha='center', color='darkblue', weight='bold')
+fig.text(0.12, 0.56, 'PG Layer (8nm)', fontsize=10, ha='center', color='forestgreen', weight='bold')
 fig.text(0.85, 0.56, 'PM Layer (1nm)', fontsize=10, ha='center', color='darkred', weight='bold')
 
 # Function to update animation
 def update(frame):
+    global current_frame
+    current_frame = frame
     ax.clear()
     
     # Get current data
@@ -194,7 +257,7 @@ def update(frame):
     edge_x_pg, edge_y_pg, edge_z_pg = create_wireframe_edges(pg_outer_radius)
     edge_x_pm, edge_y_pm, edge_z_pm = create_wireframe_edges(pm_outer_radius)
     
-    # Plot inner sphere (PM layer) - red colors
+    # Plot inner sphere (PM layer) - with conditional coloring
     pm_surf = ax.plot_surface(
         x_pm, y_pm, z_pm,
         color='red', alpha=0.9,  # Fairly opaque
@@ -202,19 +265,26 @@ def update(frame):
         linewidth=0, antialiased=True
     )
     
-    # Color PM surface based on PM tension using RED colormap
-    pm_color = pm_cmap(pm_norm(pm_tension))
+    # Color PM surface based on PM tension
+    # If tension < 0.2, use white; otherwise use red colormap
+    if pm_tension < 0.2:
+        pm_color = 'white'
+    else:
+        # Normalize the tension value for the red part of the colormap
+        normalized_tension = (pm_tension - 0.2) / (area_data['PM_Tension'].max() - 0.2)
+        pm_color = cm.Reds_r(normalized_tension)
+    
     pm_surf.set_facecolor(pm_color)
     
-    # Plot outer sphere (PG layer) with more transparency - blue colors
+    # Plot outer sphere (PG layer) with more transparency - green to black colors
     pg_surf = ax.plot_surface(
         x_pg, y_pg, z_pg,
-        color='blue', alpha=0.6,  # Semi-transparent
+        color='green', alpha=0.6,  # Semi-transparent
         rstride=1, cstride=1,
         linewidth=0, antialiased=True
     )
     
-    # Color PG surface based on PG tension using BLUE colormap
+    # Color PG surface based on PG tension using custom green-to-black colormap
     pg_color = pg_cmap(pg_norm(pg_tension))
     pg_surf.set_facecolor(pg_color)
     
@@ -224,23 +294,68 @@ def update(frame):
     # Add wireframe edges for PM layer at the cutout
     ax.plot(edge_x_pm, edge_y_pm, edge_z_pm, color='black', linewidth=1.5, alpha=0.6)
     
-    # Add additional cross-section lines to clearly show layer thickness at the cutout
-    # For PG layer boundary (vertical cross-section at y=0)
-    x_range = np.linspace(0, pg_outer_radius, 50)
-    z_range = np.zeros_like(x_range)
-    y_slice = np.zeros_like(x_range)
+    # ADD CROSS-SECTION VISUALIZATION TO SHOW BOTH LAYERS CLEARLY
+    # Draw cross-section lines to show layer thickness
+    y_zero = 0
+    z_zero = 0
     
-    # Draw cross-section line for outer PG surface
-    ax.plot(x_range, y_slice, z_range, color='black', linewidth=1.0)
+    # Draw cross-section for PG layer (outer layer) - thicker
+    x_pg_range = np.linspace(-pg_outer_radius, 0, 50)
+    x_pg_range = x_pg_range[x_pg_range <= 0]  # Only keep left half for the cutout
     
-    # Draw cross-section line for PM-PG interface
-    x_range_inner = np.linspace(0, pm_outer_radius, 50)
-    ax.plot(x_range_inner, y_slice, z_range, color='black', linewidth=1.0)
+    # Outer surface of PG
+    y_pg_outer = np.zeros_like(x_pg_range)
+    z_pg_outer = np.sqrt(pg_outer_radius**2 - x_pg_range**2)
     
-    # Set fixed axis limits - ALWAYS THE SAME regardless of frame
-    ax.set_xlim([-max_possible_radius, max_possible_radius])
-    ax.set_ylim([-max_possible_radius, max_possible_radius])
-    ax.set_zlim([-max_possible_radius, max_possible_radius])
+    # Inner surface of PG
+    y_pg_inner = np.zeros_like(x_pg_range)
+    z_pg_inner = np.sqrt(pg_inner_radius**2 - x_pg_range**2)
+    
+    # Draw PG layer edges with green color to match the new colormap
+    ax.plot(x_pg_range, y_pg_outer, z_pg_outer, color='forestgreen', linewidth=2.5)
+    ax.plot(x_pg_range, y_pg_inner, z_pg_inner, color='forestgreen', linewidth=2.5)
+    
+    # Draw cross-section for PM layer (inner layer) - thinner
+    x_pm_range = np.linspace(-pm_outer_radius, 0, 50)
+    x_pm_range = x_pm_range[x_pm_range <= 0]  # Only keep left half for the cutout
+    
+    # Outer surface of PM (which is also inner surface of PG)
+    y_pm_outer = np.zeros_like(x_pm_range)
+    z_pm_outer = np.sqrt(pm_outer_radius**2 - x_pm_range**2)
+    
+    # Inner surface of PM
+    y_pm_inner = np.zeros_like(x_pm_range)
+    z_pm_inner = np.sqrt(pm_inner_radius**2 - x_pm_range**2)
+    
+    # Draw PM layer edges with distinct color
+    ax.plot(x_pm_range, y_pm_outer, z_pm_outer, color='red', linewidth=2.5)
+    ax.plot(x_pm_range, y_pm_inner, z_pm_inner, color='red', linewidth=2.5)
+    
+    # Connect the layers at the edges with vertical lines
+    for x_pos in [-pg_outer_radius, 0]:
+        if x_pos == 0:
+            # At x=0, we have the cutout edge
+            # Draw lines connecting PG outer to PG inner
+            # Get z positions
+            if x_pos >= -pg_outer_radius:
+                z_pg_top = np.sqrt(max(0, pg_outer_radius**2 - x_pos**2))
+                z_pg_bottom = np.sqrt(max(0, pg_inner_radius**2 - x_pos**2))
+                ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pg_top, z_pg_bottom], color='forestgreen', linewidth=2.5)
+            
+            # Draw lines connecting PM outer to PM inner
+            if x_pos >= -pm_outer_radius:
+                z_pm_top = np.sqrt(max(0, pm_outer_radius**2 - x_pos**2))
+                z_pm_bottom = np.sqrt(max(0, pm_inner_radius**2 - x_pos**2))
+                ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pm_top, z_pm_bottom], color='red', linewidth=2.5)
+    
+    # Calculate adjusted max possible radius based on current thickness multiplier
+    adjusted_max_radius = (surface_area_to_radius(area_data['Surface_Area'].max()) + 
+                          inner_thickness + outer_thickness) * 1.5
+    
+    # Set fixed axis limits - ADJUST BASED ON CURRENT THICKNESS
+    ax.set_xlim([-adjusted_max_radius, adjusted_max_radius])
+    ax.set_ylim([-adjusted_max_radius, adjusted_max_radius])
+    ax.set_zlim([-adjusted_max_radius, adjusted_max_radius])
     
     # Set fixed aspect ratio to prevent axis scaling
     ax.set_box_aspect([1, 1, 1])
@@ -255,27 +370,25 @@ def update(frame):
     ax.set_xlabel('X [µm]', fontsize=10)
     ax.set_ylabel('Y [µm]', fontsize=10)
     ax.set_zlabel('Z [µm]', fontsize=10)
-    ax.set_title('Bacterial Cell Expansion', fontsize=14, y=1.0)
+    ax.set_title('Bacterial Expansion', fontsize=14, y=1.0)
     
-    # Improve visibility of the layer distinction by adding annotation
-    arrow_length = 0.2 * max_possible_radius
-    
-    # Annotate PG layer
-    pg_arrow_x = 0.6 * max_possible_radius
-    pg_arrow_y = 0
-    pg_arrow_z = 0
-    ax.text(pg_arrow_x, pg_arrow_y, pg_arrow_z, "PG Layer", color='blue', fontsize=9)
-    
-    # Annotate PM layer
-    pm_arrow_x = 0.3 * max_possible_radius
-    pm_arrow_y = 0
-    pm_arrow_z = 0
-    ax.text(pm_arrow_x, pm_arrow_y, pm_arrow_z, "PM Layer", color='red', fontsize=9)
+    # Removed layer text annotations as requested
     
     # Adjust the view angle for better visualization of the cutout
-    ax.view_init(elev=20, azim=30)  # Lower elevation angle to see inside better
+    # Only set this on initial load, allow mouse to control afterwards
+    if not hasattr(update, 'view_initialized'):
+        ax.view_init(elev=20, azim=30)  # Lower elevation angle to see inside better
+        update.view_initialized = True
     
     return [pg_surf, pm_surf]
+
+# Set up the initial view and enable mouse interactions
+def setup_mouse_controls():
+    # Enable default 3D mouse rotation and zooming
+    # The following allows mouse control similar to CAD software
+    
+    # Rotation and zoom with mouse clicks and wheel
+    ax.mouse_init()
 
 # Create animation with better frame rate for smoother rotation
 frames = range(0, len(area_data), 2)  # Less skipping for smoother animation
@@ -284,6 +397,9 @@ anim = animation.FuncAnimation(
     interval=70, blit=False
 )
 
+# Set up mouse controls
+setup_mouse_controls()
+
 # Set the first frame
 update(0)
 
@@ -291,6 +407,10 @@ update(0)
 plt.show()
 
 # Uncomment to save animation
-# anim.save('bacteria_expansion_improved.mp4', writer='ffmpeg', fps=25, dpi=150)
+# anim.save('bacteria_expansion.mp4', writer='ffmpeg', fps=25, dpi=150)
 
-print("Animation displayed. Use mouse to rotate the model.")
+print("Animation displayed with interactive controls:")
+print("• Left-click and drag to rotate the model")
+print("• Right-click and drag to pan")
+print("• Use scroll wheel to zoom in/out")
+print("• Use the slider to adjust layer thickness")

@@ -26,7 +26,7 @@ def surface_area_to_radius(area):
 # Add radius column to area_data
 area_data['Radius'] = surface_area_to_radius(area_data['Surface_Area'])
 
-# Function to create a sphere with 1/4 cutout (larger cutout)
+# Function to create a sphere with 1/4 cutout
 def create_cutout_sphere(radius, resolution=50):
     """Create a sphere with a larger cutout to better see inside."""
     u = np.linspace(0, 2 * np.pi, resolution)
@@ -36,11 +36,10 @@ def create_cutout_sphere(radius, resolution=50):
     y = radius * np.outer(np.sin(u), np.sin(v))
     z = radius * np.outer(np.ones(np.size(u)), np.cos(v))
     
-    # Create a larger cutout - 1/4 of the sphere instead of 1/8
+    # Create a larger cutout - 1/4 of the sphere
     mask = np.zeros_like(x, dtype=bool)
     for i in range(x.shape[0]):
         for j in range(x.shape[1]):
-            # Expanded cutout criteria to show more of the interior
             if x[i, j] > 0 and y[i, j] > 0:
                 mask[i, j] = True
     
@@ -54,6 +53,45 @@ def create_cutout_sphere(radius, resolution=50):
     z_cut[mask] = np.nan
     
     return x_cut, y_cut, z_cut
+
+# Create a function for wireframe edges to show layer boundaries
+def create_wireframe_edges(radius, resolution=25):
+    """Create edge lines that will highlight layer boundaries"""
+    u = np.linspace(0, 2 * np.pi, resolution)
+    v = np.linspace(0, np.pi, resolution)
+    
+    # Create full sphere coordinates
+    x = radius * np.outer(np.cos(u), np.sin(v))
+    y = radius * np.outer(np.sin(u), np.sin(v))
+    z = radius * np.outer(np.ones(np.size(u)), np.cos(v))
+    
+    # Apply cutout mask
+    mask = np.zeros_like(x, dtype=bool)
+    for i in range(x.shape[0]):
+        for j in range(x.shape[1]):
+            if x[i, j] > 0 and y[i, j] > 0:
+                mask[i, j] = True
+    
+    # Create empty arrays for edge coordinates
+    edge_x, edge_y, edge_z = [], [], []
+    
+    # Add coordinates for cutout edge - vertical edge (constant x)
+    idx_x = np.argmin(np.abs(x[:, 0]))  # Find index closest to x=0
+    for j in range(x.shape[1]):
+        if not mask[idx_x, j]:
+            edge_x.append(x[idx_x, j])
+            edge_y.append(y[idx_x, j])
+            edge_z.append(z[idx_x, j])
+    
+    # Add coordinates for cutout edge - horizontal edge (constant y)
+    idx_y = np.argmin(np.abs(y[0, :]))  # Find index closest to y=0
+    for i in range(x.shape[0]):
+        if not mask[i, idx_y]:
+            edge_x.append(x[i, idx_y])
+            edge_y.append(y[i, idx_y])
+            edge_z.append(z[i, idx_y])
+    
+    return edge_x, edge_y, edge_z
 
 # Function to get tension values for a given area
 def get_tension_for_area(area_val, area_df=area_data):
@@ -84,30 +122,21 @@ fig = plt.figure(figsize=(14, 9))
 ax = fig.add_subplot(111, projection='3d')
 ax.set_position([0.25, 0.05, 0.70, 0.85])  # Move plot to the right to make space for info on left
 
-# Create custom colormaps with specific thresholding for PM values
-pg_cmap = cm.viridis     # Blue-green, dark to light for PG layer
-pm_cmap = cm.magma_r     # Yellow-red-purple, light to dark for PM layer
+# Create DISTINCT colormaps for the two layers
+# Green-to-black gradient for PG layer
+pg_cmap = mpl.colors.LinearSegmentedColormap.from_list('GreenToBlack', ['forestgreen', 'darkgreen', 'black'])
 
-# For PM, create a custom normalized colormap where values < 0.2 have the same color
-class CustomNorm(mpl.colors.Normalize):
-    def __init__(self, vmin=0, vmax=1, threshold=0.2, clip=False):
-        self.threshold = threshold
-        super().__init__(vmin, vmax, clip)
-    
-    def __call__(self, value, clip=None):
-        # Make all values below threshold map to the same color
-        if np.iterable(value):
-            result = np.array([self(val) for val in value])
-            return result
-        else:
-            if value < self.threshold:
-                return super().__call__(self.threshold)
-            else:
-                return super().__call__(value)
+# Custom colormap for PM layer: white for values < 0.2, then red gradient
+# We'll create this using a ListedColormap with boundaries
+pm_colors = ['white']  # Start with white
+pm_colors.extend(cm.Reds_r(np.linspace(0, 1, 256)))  # Add red gradient colors
 
-# Use custom norm for PM with threshold at 0.2
+# Create a BoundaryNorm to specify the ranges for each color
+pm_bounds = [0, 0.2, area_data['PM_Tension'].max()]
+pm_norm = mpl.colors.BoundaryNorm(pm_bounds, len(pm_colors))
+
+# Set up normalization for the PG color scale
 pg_norm = mpl.colors.Normalize(vmin=0, vmax=area_data['PG_Tension'].max())
-pm_norm = CustomNorm(vmin=0, vmax=area_data['PM_Tension'].max(), threshold=0.2)
 
 # Add information texts on the LEFT side
 pressure_text = fig.text(0.12, 0.9, "Pressure: 0.00 atm", 
@@ -122,28 +151,42 @@ surface_area_text = fig.text(0.12, 0.82, "Surface Area: 0.00 µ²",
                     ha='center')
 
 pg_tension_text = fig.text(0.12, 0.74, "PG Tension: 0.00 [10² N/m]", 
-                  fontsize=12, color='darkblue',
+                  fontsize=12, color='forestgreen',
                   bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3', edgecolor='gray'),
                   ha='center')
 
 pm_tension_text = fig.text(0.12, 0.66, "PM Tension: 0.00 [10² N/m]", 
-                  fontsize=12, color='darkmagenta',
+                  fontsize=12, color='darkred',
                   bbox=dict(facecolor='white', alpha=0.7, boxstyle='round,pad=0.3', edgecolor='gray'),
                   ha='center')
 
-# Add colorbars on the left side as well
-cax1 = fig.add_axes([0.12, 0.3, 0.03, 0.25])  # PG colorbar
-cax2 = fig.add_axes([0.12, 0.05, 0.03, 0.25])  # PM colorbar
+# Add colorbars on opposite sides
+cax1 = fig.add_axes([0.12, 0.3, 0.03, 0.25])  # PG colorbar on LEFT
+cax2 = fig.add_axes([0.85, 0.3, 0.03, 0.25])  # PM colorbar on RIGHT
 
+# Create custom colorbar for PG tension
 cbar1 = plt.colorbar(cm.ScalarMappable(norm=pg_norm, cmap=pg_cmap), cax=cax1)
-cbar2 = plt.colorbar(cm.ScalarMappable(norm=pm_norm, cmap=pm_cmap), cax=cax2)
-
 cbar1.set_label('PG Tension [10² N/m]', fontsize=10)
+
+# Create custom colorbar for PM tension with white for values < 0.2
+# We need to create a custom colormap for this
+pm_levels = np.linspace(0, area_data['PM_Tension'].max(), 100)
+# Custom colormap: white for values < 0.2, then transition to red gradient
+white_red_cmap = mpl.colors.ListedColormap(['white'] + [cm.Reds_r(i) for i in np.linspace(0, 1, 99)])
+bounds = [0, 0.2] + list(np.linspace(0.2, area_data['PM_Tension'].max(), 99))
+norm = mpl.colors.BoundaryNorm(bounds, white_red_cmap.N)
+
+# Create the PM colorbar
+cbar2 = plt.colorbar(cm.ScalarMappable(norm=norm, cmap=white_red_cmap), cax=cax2)
 cbar2.set_label('PM Tension [10² N/m]', fontsize=10)
 
-# Add layer labels
-fig.text(0.12, 0.56, 'PG Layer (8nm)', fontsize=10, ha='center', color='darkblue', weight='bold')
-fig.text(0.12, 0.31, 'PM Layer (1nm)', fontsize=10, ha='center', color='darkmagenta', weight='bold')
+# Add a text marker to show the 0.2 threshold on the PM colorbar
+cax2.text(1.5, 0.2 / area_data['PM_Tension'].max() * cax2.get_ylim()[1], 
+          "0.2", color='black', fontsize=8, ha='left', va='center')
+
+# Add layer labels on proper sides
+fig.text(0.12, 0.56, 'PG Layer (8nm)', fontsize=10, ha='center', color='forestgreen', weight='bold')
+fig.text(0.85, 0.56, 'PM Layer (1nm)', fontsize=10, ha='center', color='darkred', weight='bold')
 
 # Function to update animation
 def update(frame):
@@ -156,35 +199,113 @@ def update(frame):
     pm_tension = area_data.iloc[frame]['PM_Tension']
     pressure = get_pressure_for_area(area_val)
     
-    # Calculate radii for both layers
-    inner_radius = radius + inner_thickness/2
-    outer_radius = radius + inner_thickness + outer_thickness/2
+    # Calculate radii for both layers (inner and outer surface of each layer)
+    # PG layer (outer)
+    pg_inner_radius = radius + inner_thickness  # Inner surface of PG layer
+    pg_outer_radius = radius + inner_thickness + outer_thickness  # Outer surface of PG layer
     
-    # Create spheres with larger cutout
-    x_inner, y_inner, z_inner = create_cutout_sphere(inner_radius, resolution=50)
-    x_outer, y_outer, z_outer = create_cutout_sphere(outer_radius, resolution=50)
+    # PM layer (inner)
+    pm_inner_radius = radius  # Inner surface of PM layer
+    pm_outer_radius = radius + inner_thickness  # Outer surface of PM layer
     
-    # Plot inner sphere (PM layer) - clearly visible
-    inner_surf = ax.plot_surface(
-        x_inner, y_inner, z_inner,
-        color='magenta', alpha=1.0,  # Fully opaque for visibility
+    # Create main surfaces
+    x_pg, y_pg, z_pg = create_cutout_sphere(pg_outer_radius, resolution=50)
+    x_pm, y_pm, z_pm = create_cutout_sphere(pm_outer_radius, resolution=50)
+    
+    # Create edge highlighting lines
+    edge_x_pg, edge_y_pg, edge_z_pg = create_wireframe_edges(pg_outer_radius)
+    edge_x_pm, edge_y_pm, edge_z_pm = create_wireframe_edges(pm_outer_radius)
+    
+    # Plot inner sphere (PM layer) - with conditional coloring
+    pm_surf = ax.plot_surface(
+        x_pm, y_pm, z_pm,
+        color='red', alpha=0.9,  # Fairly opaque
         rstride=1, cstride=1,
         linewidth=0, antialiased=True
     )
     
-    # Color inner surface based on PM tension
-    inner_surf.set_facecolor(pm_cmap(pm_norm(pm_tension)))
+    # Color PM surface based on PM tension
+    # If tension < 0.2, use white; otherwise use red colormap
+    if pm_tension < 0.2:
+        pm_color = 'white'
+    else:
+        # Normalize the tension value for the red part of the colormap
+        normalized_tension = (pm_tension - 0.2) / (area_data['PM_Tension'].max() - 0.2)
+        pm_color = cm.Reds_r(normalized_tension)
     
-    # Plot outer sphere (PG layer) with more transparency
-    outer_surf = ax.plot_surface(
-        x_outer, y_outer, z_outer,
-        color='blue', alpha=0.7,  # Semi-transparent
+    pm_surf.set_facecolor(pm_color)
+    
+    # Plot outer sphere (PG layer) with more transparency - green to black colors
+    pg_surf = ax.plot_surface(
+        x_pg, y_pg, z_pg,
+        color='green', alpha=0.6,  # Semi-transparent
         rstride=1, cstride=1,
         linewidth=0, antialiased=True
     )
     
-    # Color outer surface based on PG tension
-    outer_surf.set_facecolor(pg_cmap(pg_norm(pg_tension)))
+    # Color PG surface based on PG tension using custom green-to-black colormap
+    pg_color = pg_cmap(pg_norm(pg_tension))
+    pg_surf.set_facecolor(pg_color)
+    
+    # Add wireframe edges to highlight layers at the cutout (outer PG)
+    ax.plot(edge_x_pg, edge_y_pg, edge_z_pg, color='black', linewidth=1.5, alpha=0.6)
+    
+    # Add wireframe edges for PM layer at the cutout
+    ax.plot(edge_x_pm, edge_y_pm, edge_z_pm, color='black', linewidth=1.5, alpha=0.6)
+    
+    # ADD CROSS-SECTION VISUALIZATION TO SHOW BOTH LAYERS CLEARLY
+    # Draw cross-section lines to show layer thickness
+    y_zero = 0
+    z_zero = 0
+    
+    # Draw cross-section for PG layer (outer layer) - thicker
+    x_pg_range = np.linspace(-pg_outer_radius, 0, 50)
+    x_pg_range = x_pg_range[x_pg_range <= 0]  # Only keep left half for the cutout
+    
+    # Outer surface of PG
+    y_pg_outer = np.zeros_like(x_pg_range)
+    z_pg_outer = np.sqrt(pg_outer_radius**2 - x_pg_range**2)
+    
+    # Inner surface of PG
+    y_pg_inner = np.zeros_like(x_pg_range)
+    z_pg_inner = np.sqrt(pg_inner_radius**2 - x_pg_range**2)
+    
+    # Draw PG layer edges with green color to match the new colormap
+    ax.plot(x_pg_range, y_pg_outer, z_pg_outer, color='forestgreen', linewidth=2.5)
+    ax.plot(x_pg_range, y_pg_inner, z_pg_inner, color='forestgreen', linewidth=2.5)
+    
+    # Draw cross-section for PM layer (inner layer) - thinner
+    x_pm_range = np.linspace(-pm_outer_radius, 0, 50)
+    x_pm_range = x_pm_range[x_pm_range <= 0]  # Only keep left half for the cutout
+    
+    # Outer surface of PM (which is also inner surface of PG)
+    y_pm_outer = np.zeros_like(x_pm_range)
+    z_pm_outer = np.sqrt(pm_outer_radius**2 - x_pm_range**2)
+    
+    # Inner surface of PM
+    y_pm_inner = np.zeros_like(x_pm_range)
+    z_pm_inner = np.sqrt(pm_inner_radius**2 - x_pm_range**2)
+    
+    # Draw PM layer edges with distinct color
+    ax.plot(x_pm_range, y_pm_outer, z_pm_outer, color='red', linewidth=2.5)
+    ax.plot(x_pm_range, y_pm_inner, z_pm_inner, color='red', linewidth=2.5)
+    
+    # Connect the layers at the edges with vertical lines
+    for x_pos in [-pg_outer_radius, 0]:
+        if x_pos == 0:
+            # At x=0, we have the cutout edge
+            # Draw lines connecting PG outer to PG inner
+            # Get z positions
+            if x_pos >= -pg_outer_radius:
+                z_pg_top = np.sqrt(max(0, pg_outer_radius**2 - x_pos**2))
+                z_pg_bottom = np.sqrt(max(0, pg_inner_radius**2 - x_pos**2))
+                ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pg_top, z_pg_bottom], color='forestgreen', linewidth=2.5)
+            
+            # Draw lines connecting PM outer to PM inner
+            if x_pos >= -pm_outer_radius:
+                z_pm_top = np.sqrt(max(0, pm_outer_radius**2 - x_pos**2))
+                z_pm_bottom = np.sqrt(max(0, pm_inner_radius**2 - x_pos**2))
+                ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pm_top, z_pm_bottom], color='red', linewidth=2.5)
     
     # Set fixed axis limits - ALWAYS THE SAME regardless of frame
     ax.set_xlim([-max_possible_radius, max_possible_radius])
@@ -206,10 +327,12 @@ def update(frame):
     ax.set_zlabel('Z [µm]', fontsize=10)
     ax.set_title('Bacterial Cell Expansion', fontsize=14, y=1.0)
     
+    # Removed layer text annotations as requested
+    
     # Adjust the view angle for better visualization of the cutout
     ax.view_init(elev=20, azim=30)  # Lower elevation angle to see inside better
     
-    return [inner_surf, outer_surf]
+    return [pg_surf, pm_surf]
 
 # Create animation with better frame rate for smoother rotation
 frames = range(0, len(area_data), 2)  # Less skipping for smoother animation
@@ -225,6 +348,6 @@ update(0)
 plt.show()
 
 # Uncomment to save animation
-# anim.save('bacteria_expansion.mp4', writer='ffmpeg', fps=25, dpi=150)
+# anim.save('bacteria_expansion_improved.mp4', writer='ffmpeg', fps=25, dpi=150)
 
 print("Animation displayed. Use mouse to rotate the model.")
