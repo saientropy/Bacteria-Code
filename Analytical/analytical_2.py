@@ -177,17 +177,20 @@ def update_formula_text(force=False):
     # Composite formula
     ax_formulas.text(0.05, 0.45, r"$\sigma = T_{cw} + T_{pm}$", fontsize=9)
     
-    # Parameter values - with reference values added
-    # Format: current value [reference value in red]
+    # Parameter values - completely reformatted for better spacing
+    # Parameter: K
     k_val = slider_K.val
-    k_ref_text = f"[{K_ref:.2f}]"
-    ax_formulas.text(0.05, 0.3, f"K = {k_val:.2f} N/m ", fontsize=8)
-    ax_formulas.text(0.16, 0.3, k_ref_text, fontsize=8, color='red')
+    ax_formulas.text(0.05, 0.3, "K =", fontsize=8)
+    ax_formulas.text(0.12, 0.3, f"{k_val:.2f}", fontsize=8)
+    ax_formulas.text(0.18, 0.3, "N/m", fontsize=8)
+    ax_formulas.text(0.25, 0.3, f"[{K_ref:.2f}]", fontsize=8, color='red')
     
+    # Parameter: G₀
     g0_val = slider_G0.val
-    g0_ref_text = f"[{G0_ref:.3f}]"
-    ax_formulas.text(0.05, 0.23, f"G₀ = {g0_val:.3f} N/m ", fontsize=8)
-    ax_formulas.text(0.16, 0.23, g0_ref_text, fontsize=8, color='red')
+    ax_formulas.text(0.05, 0.23, "G₀ =", fontsize=8)
+    ax_formulas.text(0.12, 0.23, f"{g0_val:.3f}", fontsize=8)
+    ax_formulas.text(0.18, 0.23, "N/m", fontsize=8)
+    ax_formulas.text(0.25, 0.23, f"[{G0_ref:.3f}]", fontsize=8, color='red')
     
     beta_val = slider_beta.val
     ax_formulas.text(0.05, 0.16, f"β = {beta_val:.1f}", fontsize=8)

@@ -6,6 +6,10 @@ from matplotlib import cm
 import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D
 
+# Set backend for better interactivity
+import matplotlib
+matplotlib.use('TkAgg')  # TkAgg backend supports better interactive features
+
 # Load the data files
 pressure_data = pd.read_csv('plot_data_first_1.csv')
 area_data = pd.read_csv('plot_data_second_1.csv')
@@ -14,9 +18,9 @@ area_data = pd.read_csv('plot_data_second_1.csv')
 pressure_data.columns = ['Pressure_atm', 'PM_Tension', 'PG_Tension', 'Total_Tension']
 area_data.columns = ['Surface_Area', 'PG_Tension', 'PM_Tension', 'Total_Tension']
 
-# Constants for the bacteria model
-outer_thickness = 0.008  # 8nm converted to μm
-inner_thickness = 0.001  # 1nm converted to μm
+# Constants for the bacteria model - MUCH thicker for visibility
+outer_thickness = 0.5  # 0.5 μm - thick enough to be clearly visible
+inner_thickness = 0.3  # 0.3 μm - thick enough to be clearly visible
 
 # Function to calculate radius from surface area (assuming spherical shape)
 def surface_area_to_radius(area):
@@ -26,9 +30,9 @@ def surface_area_to_radius(area):
 # Add radius column to area_data
 area_data['Radius'] = surface_area_to_radius(area_data['Surface_Area'])
 
-# Function to create a sphere with 1/4 cutout
+# Function to create a sphere with 1/4 cutout - CAD style with clean edges
 def create_cutout_sphere(radius, resolution=50):
-    """Create a sphere with a larger cutout to better see inside."""
+    """Create a sphere with a clean cutout for CAD-like appearance"""
     u = np.linspace(0, 2 * np.pi, resolution)
     v = np.linspace(0, np.pi, resolution)
     
@@ -188,8 +192,13 @@ cax2.text(1.5, 0.2 / area_data['PM_Tension'].max() * cax2.get_ylim()[1],
 fig.text(0.12, 0.56, 'PG Layer (8nm)', fontsize=10, ha='center', color='forestgreen', weight='bold')
 fig.text(0.85, 0.56, 'PM Layer (1nm)', fontsize=10, ha='center', color='darkred', weight='bold')
 
+# Global variable to track current frame
+current_frame = 0
+
 # Function to update animation
 def update(frame):
+    global current_frame
+    current_frame = frame
     ax.clear()
     
     # Get current data
@@ -212,53 +221,28 @@ def update(frame):
     x_pg, y_pg, z_pg = create_cutout_sphere(pg_outer_radius, resolution=50)
     x_pm, y_pm, z_pm = create_cutout_sphere(pm_outer_radius, resolution=50)
     
-    # Create edge highlighting lines
-    edge_x_pg, edge_y_pg, edge_z_pg = create_wireframe_edges(pg_outer_radius)
-    edge_x_pm, edge_y_pm, edge_z_pm = create_wireframe_edges(pm_outer_radius)
-    
-    # Plot inner sphere (PM layer) - with conditional coloring
+    # Plot inner sphere (PM layer) with solid color
     pm_surf = ax.plot_surface(
         x_pm, y_pm, z_pm,
-        color='red', alpha=0.9,  # Fairly opaque
+        color='red' if pm_tension >= 0.2 else 'white', 
+        alpha=0.9,  # Fairly opaque
         rstride=1, cstride=1,
         linewidth=0, antialiased=True
     )
     
-    # Color PM surface based on PM tension
-    # If tension < 0.2, use white; otherwise use red colormap
-    if pm_tension < 0.2:
-        pm_color = 'white'
-    else:
-        # Normalize the tension value for the red part of the colormap
-        normalized_tension = (pm_tension - 0.2) / (area_data['PM_Tension'].max() - 0.2)
-        pm_color = cm.Reds_r(normalized_tension)
-    
-    pm_surf.set_facecolor(pm_color)
-    
-    # Plot outer sphere (PG layer) with more transparency - green to black colors
+    # Plot outer sphere (PG layer) with green color
     pg_surf = ax.plot_surface(
         x_pg, y_pg, z_pg,
-        color='green', alpha=0.6,  # Semi-transparent
+        color='forestgreen',
+        alpha=0.7,  # Semi-transparent
         rstride=1, cstride=1,
         linewidth=0, antialiased=True
     )
     
-    # Color PG surface based on PG tension using custom green-to-black colormap
-    pg_color = pg_cmap(pg_norm(pg_tension))
-    pg_surf.set_facecolor(pg_color)
+    # Draw clean cross-section lines to show layer thickness - NO UNWANTED LINES
+    # Only draw the essential cross-sections
     
-    # Add wireframe edges to highlight layers at the cutout (outer PG)
-    ax.plot(edge_x_pg, edge_y_pg, edge_z_pg, color='black', linewidth=1.5, alpha=0.6)
-    
-    # Add wireframe edges for PM layer at the cutout
-    ax.plot(edge_x_pm, edge_y_pm, edge_z_pm, color='black', linewidth=1.5, alpha=0.6)
-    
-    # ADD CROSS-SECTION VISUALIZATION TO SHOW BOTH LAYERS CLEARLY
-    # Draw cross-section lines to show layer thickness
-    y_zero = 0
-    z_zero = 0
-    
-    # Draw cross-section for PG layer (outer layer) - thicker
+    # Draw cross-section for PG layer (outer layer)
     x_pg_range = np.linspace(-pg_outer_radius, 0, 50)
     x_pg_range = x_pg_range[x_pg_range <= 0]  # Only keep left half for the cutout
     
@@ -270,15 +254,15 @@ def update(frame):
     y_pg_inner = np.zeros_like(x_pg_range)
     z_pg_inner = np.sqrt(pg_inner_radius**2 - x_pg_range**2)
     
-    # Draw PG layer edges with green color to match the new colormap
-    ax.plot(x_pg_range, y_pg_outer, z_pg_outer, color='forestgreen', linewidth=2.5)
-    ax.plot(x_pg_range, y_pg_inner, z_pg_inner, color='forestgreen', linewidth=2.5)
+    # Draw PG layer edges with green color
+    ax.plot(x_pg_range, y_pg_outer, z_pg_outer, color='black', linewidth=1.0)
+    ax.plot(x_pg_range, y_pg_inner, z_pg_inner, color='black', linewidth=1.0)
     
-    # Draw cross-section for PM layer (inner layer) - thinner
+    # Draw cross-section for PM layer (inner layer)
     x_pm_range = np.linspace(-pm_outer_radius, 0, 50)
     x_pm_range = x_pm_range[x_pm_range <= 0]  # Only keep left half for the cutout
     
-    # Outer surface of PM (which is also inner surface of PG)
+    # Outer surface of PM
     y_pm_outer = np.zeros_like(x_pm_range)
     z_pm_outer = np.sqrt(pm_outer_radius**2 - x_pm_range**2)
     
@@ -286,26 +270,11 @@ def update(frame):
     y_pm_inner = np.zeros_like(x_pm_range)
     z_pm_inner = np.sqrt(pm_inner_radius**2 - x_pm_range**2)
     
-    # Draw PM layer edges with distinct color
-    ax.plot(x_pm_range, y_pm_outer, z_pm_outer, color='red', linewidth=2.5)
-    ax.plot(x_pm_range, y_pm_inner, z_pm_inner, color='red', linewidth=2.5)
+    # Draw PM layer edges with black for CAD-like look
+    ax.plot(x_pm_range, y_pm_outer, z_pm_outer, color='black', linewidth=1.0)
+    ax.plot(x_pm_range, y_pm_inner, z_pm_inner, color='black', linewidth=1.0)
     
-    # Connect the layers at the edges with vertical lines
-    for x_pos in [-pg_outer_radius, 0]:
-        if x_pos == 0:
-            # At x=0, we have the cutout edge
-            # Draw lines connecting PG outer to PG inner
-            # Get z positions
-            if x_pos >= -pg_outer_radius:
-                z_pg_top = np.sqrt(max(0, pg_outer_radius**2 - x_pos**2))
-                z_pg_bottom = np.sqrt(max(0, pg_inner_radius**2 - x_pos**2))
-                ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pg_top, z_pg_bottom], color='forestgreen', linewidth=2.5)
-            
-            # Draw lines connecting PM outer to PM inner
-            if x_pos >= -pm_outer_radius:
-                z_pm_top = np.sqrt(max(0, pm_outer_radius**2 - x_pos**2))
-                z_pm_bottom = np.sqrt(max(0, pm_inner_radius**2 - x_pos**2))
-                ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pm_top, z_pm_bottom], color='red', linewidth=2.5)
+    # NO extra connecting lines or decorations - keep it clean
     
     # Set fixed axis limits - ALWAYS THE SAME regardless of frame
     ax.set_xlim([-max_possible_radius, max_possible_radius])
@@ -327,15 +296,21 @@ def update(frame):
     ax.set_zlabel('Z [µm]', fontsize=10)
     ax.set_title('Bacterial Cell Expansion', fontsize=14, y=1.0)
     
-    # Removed layer text annotations as requested
+    # Clean CAD-like style settings
+    ax.grid(True, linestyle='-', linewidth=0.5, alpha=0.7)  # Clean grid
     
-    # Adjust the view angle for better visualization of the cutout
-    ax.view_init(elev=20, azim=30)  # Lower elevation angle to see inside better
+    # Set view
+    if not hasattr(update, 'view_initialized'):
+        ax.view_init(elev=20, azim=30)
+        update.view_initialized = True
+    
+    # Ensure mouse controls work
+    ax.mouse_init()
     
     return [pg_surf, pm_surf]
 
-# Create animation with better frame rate for smoother rotation
-frames = range(0, len(area_data), 2)  # Less skipping for smoother animation
+# Create animation with better frame rate
+frames = range(0, len(area_data), 2)
 anim = animation.FuncAnimation(
     fig, update, frames=frames,
     interval=70, blit=False
@@ -344,10 +319,11 @@ anim = animation.FuncAnimation(
 # Set the first frame
 update(0)
 
+# Enable interactive mode for better mouse control
+plt.ion()
+
 # Show the plot
-plt.show()
+plt.show(block=True)
 
-# Uncomment to save animation
-# anim.save('bacteria_expansion_improved.mp4', writer='ffmpeg', fps=25, dpi=150)
-
-print("Animation displayed. Use mouse to rotate the model.")
+print("Clean CAD-style visualization displayed.")
+print("Use mouse to rotate the model: left-click and drag")

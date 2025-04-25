@@ -5,6 +5,7 @@ import matplotlib as mpl
 from matplotlib import cm
 import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.widgets import Button
 
 # Load the data files
 pressure_data = pd.read_csv('plot_data_first_1.csv')
@@ -14,9 +15,9 @@ area_data = pd.read_csv('plot_data_second_1.csv')
 pressure_data.columns = ['Pressure_atm', 'PM_Tension', 'PG_Tension', 'Total_Tension']
 area_data.columns = ['Surface_Area', 'PG_Tension', 'PM_Tension', 'Total_Tension']
 
-# Constants for the bacteria model
-outer_thickness = 0.5  # 8nm converted to μm
-inner_thickness = 0.3 # 1nm converted to μm
+# Constants for the bacteria model - increased for better visibility
+outer_thickness = 0.5  # Increased from 0.008 to 0.5 μm for better visibility
+inner_thickness = 0.3  # Increased from 0.001 to 0.3 μm for better visibility
 
 # Function to calculate radius from surface area (assuming spherical shape)
 def surface_area_to_radius(area):
@@ -122,44 +123,11 @@ fig = plt.figure(figsize=(14, 9))
 ax = fig.add_subplot(111, projection='3d')
 ax.set_position([0.25, 0.05, 0.70, 0.85])  # Move plot to the right to make space for info on left
 
-# Add mouse controls for rotation and zoom
-from matplotlib.widgets import Slider
-
-# Enable tight layout
-fig.tight_layout()
-
-# Add a slider for adjusting layer thickness
-thickness_slider_ax = fig.add_axes([0.25, 0.01, 0.65, 0.02])  # [left, bottom, width, height]
-thickness_slider = Slider(
-    ax=thickness_slider_ax,
-    label='Slide to make thickness visible',
-    valmin=0.5,
-    valmax=5.0,
-    valinit=1.0,
-    valstep=0.1
-)
-
-# Define the original thickness values for reference
-orig_outer_thickness = outer_thickness
-orig_inner_thickness = inner_thickness
-
-# Global variable to track the current thickness multiplier
-current_thickness_multiplier = 1.0
-
-# Function to update thickness based on slider
-def update_thickness(val):
-    global outer_thickness, inner_thickness, current_thickness_multiplier
-    current_thickness_multiplier = val
-    outer_thickness = orig_outer_thickness * val
-    inner_thickness = orig_inner_thickness * val
-    update(current_frame)  # Update the visualization
-    fig.canvas.draw_idle()
-
-# Connect the slider to the update function
-thickness_slider.on_changed(update_thickness)
-
-# Global variable to track current frame
-current_frame = 0
+# Store the initial view
+initial_elev = 20
+initial_azim = 30
+current_elev = initial_elev
+current_azim = initial_azim
 
 # Create DISTINCT colormaps for the two layers
 # Green-to-black gradient for PG layer
@@ -226,6 +194,85 @@ cax2.text(1.5, 0.2 / area_data['PM_Tension'].max() * cax2.get_ylim()[1],
 # Add layer labels on proper sides
 fig.text(0.12, 0.56, 'PG Layer (8nm)', fontsize=10, ha='center', color='forestgreen', weight='bold')
 fig.text(0.85, 0.56, 'PM Layer (1nm)', fontsize=10, ha='center', color='darkred', weight='bold')
+
+# Add rotation buttons
+btn_left_ax = fig.add_axes([0.25, 0.01, 0.1, 0.03])
+btn_left = Button(btn_left_ax, 'Rotate Left')
+
+btn_right_ax = fig.add_axes([0.36, 0.01, 0.1, 0.03])
+btn_right = Button(btn_right_ax, 'Rotate Right')
+
+btn_up_ax = fig.add_axes([0.47, 0.01, 0.1, 0.03])
+btn_up = Button(btn_up_ax, 'Rotate Up')
+
+btn_down_ax = fig.add_axes([0.58, 0.01, 0.1, 0.03])
+btn_down = Button(btn_down_ax, 'Rotate Down')
+
+btn_reset_ax = fig.add_axes([0.69, 0.01, 0.1, 0.03])
+btn_reset = Button(btn_reset_ax, 'Reset View')
+
+# Global variable to track current frame
+current_frame = 0
+
+# Rotation functions
+def rotate_left(event):
+    global current_azim
+    current_azim = (current_azim + 10) % 360
+    ax.view_init(elev=current_elev, azim=current_azim)
+    fig.canvas.draw()
+
+def rotate_right(event):
+    global current_azim
+    current_azim = (current_azim - 10) % 360
+    ax.view_init(elev=current_elev, azim=current_azim)
+    fig.canvas.draw()
+
+def rotate_up(event):
+    global current_elev
+    current_elev = min(current_elev + 10, 90)
+    ax.view_init(elev=current_elev, azim=current_azim)
+    fig.canvas.draw()
+
+def rotate_down(event):
+    global current_elev
+    current_elev = max(current_elev - 10, -90)
+    ax.view_init(elev=current_elev, azim=current_azim)
+    fig.canvas.draw()
+
+def reset_view(event):
+    global current_elev, current_azim
+    current_elev = initial_elev
+    current_azim = initial_azim
+    ax.view_init(elev=current_elev, azim=current_azim)
+    fig.canvas.draw()
+
+# Connect buttons to functions
+btn_left.on_clicked(rotate_left)
+btn_right.on_clicked(rotate_right)
+btn_up.on_clicked(rotate_up)
+btn_down.on_clicked(rotate_down)
+btn_reset.on_clicked(reset_view)
+
+# Add keyboard event handler
+def on_key(event):
+    global current_elev, current_azim
+    if event.key == 'left':
+        current_azim = (current_azim + 10) % 360
+    elif event.key == 'right':
+        current_azim = (current_azim - 10) % 360
+    elif event.key == 'up':
+        current_elev = min(current_elev + 10, 90)
+    elif event.key == 'down':
+        current_elev = max(current_elev - 10, -90)
+    elif event.key == 'r':
+        current_elev = initial_elev
+        current_azim = initial_azim
+    
+    ax.view_init(elev=current_elev, azim=current_azim)
+    fig.canvas.draw()
+
+# Connect the key event handler
+fig.canvas.mpl_connect('key_press_event', on_key)
 
 # Function to update animation
 def update(frame):
@@ -328,34 +375,30 @@ def update(frame):
     z_pm_inner = np.sqrt(pm_inner_radius**2 - x_pm_range**2)
     
     # Draw PM layer edges with distinct color
-    ax.plot(x_pm_range, y_pm_outer, z_pm_outer, color='red', linewidth=2.5)
+    # IMPORTANT: Skip the top points to avoid the unwanted line
+    ax.plot(x_pm_range[:-5], y_pm_outer[:-5], z_pm_outer[:-5], color='red', linewidth=2.5)
     ax.plot(x_pm_range, y_pm_inner, z_pm_inner, color='red', linewidth=2.5)
     
     # Connect the layers at the edges with vertical lines
-    for x_pos in [-pg_outer_radius, 0]:
-        if x_pos == 0:
-            # At x=0, we have the cutout edge
-            # Draw lines connecting PG outer to PG inner
-            # Get z positions
-            if x_pos >= -pg_outer_radius:
-                z_pg_top = np.sqrt(max(0, pg_outer_radius**2 - x_pos**2))
-                z_pg_bottom = np.sqrt(max(0, pg_inner_radius**2 - x_pos**2))
-                ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pg_top, z_pg_bottom], color='forestgreen', linewidth=2.5)
-            
-            # Draw lines connecting PM outer to PM inner
-            if x_pos >= -pm_outer_radius:
-                z_pm_top = np.sqrt(max(0, pm_outer_radius**2 - x_pos**2))
-                z_pm_bottom = np.sqrt(max(0, pm_inner_radius**2 - x_pos**2))
-                ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pm_top, z_pm_bottom], color='red', linewidth=2.5)
+    # IMPORTANT: Only draw at -pg_outer_radius, not at 0 (which caused the unwanted blue line)
+    for x_pos in [-pg_outer_radius]:  # Removed x=0 position to prevent unwanted line
+        # Draw lines connecting PG outer to PG inner
+        # Get z positions
+        if x_pos >= -pg_outer_radius:
+            z_pg_top = np.sqrt(max(0, pg_outer_radius**2 - x_pos**2))
+            z_pg_bottom = np.sqrt(max(0, pg_inner_radius**2 - x_pos**2))
+            ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pg_top, z_pg_bottom], color='forestgreen', linewidth=2.5)
+        
+        # Draw lines connecting PM outer to PM inner
+        if x_pos >= -pm_outer_radius:
+            z_pm_top = np.sqrt(max(0, pm_outer_radius**2 - x_pos**2))
+            z_pm_bottom = np.sqrt(max(0, pm_inner_radius**2 - x_pos**2))
+            ax.plot([x_pos, x_pos], [y_zero, y_zero], [z_pm_top, z_pm_bottom], color='red', linewidth=2.5)
     
-    # Calculate adjusted max possible radius based on current thickness multiplier
-    adjusted_max_radius = (surface_area_to_radius(area_data['Surface_Area'].max()) + 
-                          inner_thickness + outer_thickness) * 1.5
-    
-    # Set fixed axis limits - ADJUST BASED ON CURRENT THICKNESS
-    ax.set_xlim([-adjusted_max_radius, adjusted_max_radius])
-    ax.set_ylim([-adjusted_max_radius, adjusted_max_radius])
-    ax.set_zlim([-adjusted_max_radius, adjusted_max_radius])
+    # Set fixed axis limits - ALWAYS THE SAME regardless of frame
+    ax.set_xlim([-max_possible_radius, max_possible_radius])
+    ax.set_ylim([-max_possible_radius, max_possible_radius])
+    ax.set_zlim([-max_possible_radius, max_possible_radius])
     
     # Set fixed aspect ratio to prevent axis scaling
     ax.set_box_aspect([1, 1, 1])
@@ -370,25 +413,15 @@ def update(frame):
     ax.set_xlabel('X [µm]', fontsize=10)
     ax.set_ylabel('Y [µm]', fontsize=10)
     ax.set_zlabel('Z [µm]', fontsize=10)
-    ax.set_title('Bacterial Expansion', fontsize=14, y=1.0)
+    ax.set_title('Bacterial Cell Expansion', fontsize=14, y=1.0)
     
-    # Removed layer text annotations as requested
+    # Maintain current view angles
+    ax.view_init(elev=current_elev, azim=current_azim)
     
-    # Adjust the view angle for better visualization of the cutout
-    # Only set this on initial load, allow mouse to control afterwards
-    if not hasattr(update, 'view_initialized'):
-        ax.view_init(elev=20, azim=30)  # Lower elevation angle to see inside better
-        update.view_initialized = True
+    # Enable mouse control 
+    ax.mouse_init()
     
     return [pg_surf, pm_surf]
-
-# Set up the initial view and enable mouse interactions
-def setup_mouse_controls():
-    # Enable default 3D mouse rotation and zooming
-    # The following allows mouse control similar to CAD software
-    
-    # Rotation and zoom with mouse clicks and wheel
-    ax.mouse_init()
 
 # Create animation with better frame rate for smoother rotation
 frames = range(0, len(area_data), 2)  # Less skipping for smoother animation
@@ -397,20 +430,15 @@ anim = animation.FuncAnimation(
     interval=70, blit=False
 )
 
-# Set up mouse controls
-setup_mouse_controls()
-
 # Set the first frame
 update(0)
 
+# Enable interactive mode for better mouse control
+plt.ion()
+
 # Show the plot
-plt.show()
+plt.show(block=True)  # Use block=True to ensure the plot window stays open
 
-# Uncomment to save animation
-# anim.save('bacteria_expansion.mp4', writer='ffmpeg', fps=25, dpi=150)
-
-print("Animation displayed with interactive controls:")
-print("• Left-click and drag to rotate the model")
-print("• Right-click and drag to pan")
-print("• Use scroll wheel to zoom in/out")
-print("• Use the slider to adjust layer thickness")
+print("Visualization with proper contours displayed.")
+print("Use the buttons below to rotate if mouse control doesn't work.")
+print("You can also use arrow keys to rotate and 'r' to reset view.")
