@@ -25,35 +25,32 @@ wrapper_script = """
 import sys
 import os
 import matplotlib
-matplotlib.use('Agg') # Non-interactive backend
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-# Store original show function
-original_show = plt.show
+# store original show
+_original_show = plt.show
 
-# Replace plt.show() with our capturing function
 def capture_show(*args, **kwargs):
-    fig = plt.gcf() # Get current figure
+    fig = plt.gcf()
     fig.savefig(sys.argv[2], dpi=600)
     print(f"Captured and saved figure to {sys.argv[2]}")
-    return original_show(*args, **kwargs)
+    return _original_show(*args, **kwargs)
 
 plt.show = capture_show
 
-# Run the target script
 try:
     script_path = sys.argv[1]
-    
-    # Add script directory to path
+    # add script's directory to PYTHONPATH so imports work
     script_dir = os.path.dirname(script_path)
     if script_dir:
         sys.path.insert(0, script_dir)
-    
-    # Execute the script
+
+    # execute the script
     with open(script_path, 'r') as f:
         exec(f.read(), {'__file__': script_path, '__name__': '__main__'})
-    
-    # If no figure was explicitly shown, check if any were created
+
+    # if the script never called plt.show(), still save its last figure
     if plt.get_fignums():
         plt.gcf().savefig(sys.argv[2], dpi=600)
         print(f"Saved figure to {sys.argv[2]}")
@@ -61,67 +58,60 @@ except Exception as e:
     print(f"Error executing {script_path}: {e}")
 """
 
-# Write the wrapper script to a file
+# write wrapper to disk
 wrapper_path = os.path.join("temp_figures", "wrapper.py")
 with open(wrapper_path, 'w') as f:
     f.write(wrapper_script)
 
-# Create the main figure with subplots
+# Create the main figure with subplots (2 rows × 3 cols)
 fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(15, 9))
 
-# Process each script using the wrapper
 for i, script_path in enumerate(scripts):
     print(f"Processing {script_path}...")
     
-    # Define output path for this figure
+    # define a high-res PNG for each subplot
     output_path = os.path.join("temp_figures", f"figure_{i}.png")
     
-    # Run the wrapper script with the target script
+    # run the wrapper to produce that PNG
     result = subprocess.run(
         [sys.executable, wrapper_path, script_path, output_path],
         capture_output=True,
         text=True
     )
-    
-    # Print output for debugging
     print(result.stdout)
     if result.stderr:
         print(f"Error: {result.stderr}")
     
-    # Load the saved figure if it exists
+    # if PNG was created, load & display it
     if os.path.exists(output_path):
         img = mpimg.imread(output_path)
-        
-        # Place in the appropriate subplot
         row, col = divmod(i, 3)
         axes[row, col].imshow(img)
         axes[row, col].axis("off")
-        
-        # Removed the subplot title as requested
-        
     else:
         print(f"Warning: No figure was created for {script_path}")
 
-# Add global title and row labels
-fig.suptitle("Tension vs Surface area", fontsize=16, y=0.92)
-#fig.text(0.5, 0.52, "Area Analysis (25/30/35)", ha='center', fontsize=14)
+# Add your global title and footer
+fig.suptitle("Tension vs Surface area", fontsize=16)
 fig.text(0.5, 0.02, "Tension vs Internal Pressure", ha='center', fontsize=14)
 
-# Adjust layout and save
+# Lay out nicely, then save as a vector‐PDF
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-fig.savefig("combined_plots.png", dpi=600, bbox_inches='tight')
-print("Saved combined_plots.png")
+fig.savefig("combined_plots.pdf", dpi=600, bbox_inches='tight')
+print("Saved combined_plots.pdf")
 
 # Clean up temporary files
-for file in os.listdir("temp_figures"):
+for fn in os.listdir("temp_figures"):
     try:
-        os.remove(os.path.join("temp_figures", file))
-    except:
+        os.remove(os.path.join("temp_figures", fn))
+    except OSError:
         pass
 try:
     os.rmdir("temp_figures")
-except:
+except OSError:
     pass
 
-# Display the result
-plt.show()
+# (Optional) pop up the PDF in your default viewer if you like:
+# os.system("open combined_plots.pdf")  # macOS
+# os.system("xdg-open combined_plots.pdf")  # Linux
+

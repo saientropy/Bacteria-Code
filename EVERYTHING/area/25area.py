@@ -49,7 +49,7 @@ plt.plot(x_values, pm_y_noisy, label="PM", color="blue", linewidth=1)
 plt.plot(x_values, total_y_noisy, label="Total", color="red", linewidth=1)
 plt.axhline(y=1.5, color="green", linestyle="--", linewidth=1, label="rupture tension")
 
-plt.xlabel("Internal Surface area of the PG [µ²]")
+plt.xlabel("Internal Surface area of the PG [micron^2]")
 plt.ylabel("Tension [ 10^2 N/m]")
 plt.title("Tension vs Internal Surface Area")
 plt.xlim(x_min, x_max)
