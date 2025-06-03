@@ -54,7 +54,7 @@ plt.plot(x_values, total_y_values_noisy, label="Total", color="red", linewidth=1
 plt.axhline(y=1.5, color="green", linestyle="--", linewidth=1, label="rupture tension")
 
 # Updated axis labels and title:
-plt.xlabel("Interal Pressure [atm]")
+plt.xlabel("Internal Pressure [atm]")
 plt.ylabel("Tension [ 10^2 N/m]")
 plt.title("Tension vs Pressure")
 plt.xlim(0, x_max)
