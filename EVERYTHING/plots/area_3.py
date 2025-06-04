@@ -1,3 +1,8 @@
+"""
+Third variant of area curve generation used for comparison testing. Offers a
+slightly tweaked takeoff angle.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

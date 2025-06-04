@@ -1,3 +1,8 @@
+"""
+Same as 25area.py but for a 30° takeoff angle. Provides comparative wobbly
+curves for different conditions.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math

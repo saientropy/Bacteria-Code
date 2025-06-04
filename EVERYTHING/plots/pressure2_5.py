@@ -1,3 +1,8 @@
+"""
+Plots pressure vs strain for a 2.5 atm dataset. Uses the same wobbly curve
+generation as the area scripts.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import csv

@@ -1,3 +1,8 @@
+"""
+Collection of helper functions and quick visualisations used throughout the
+project.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

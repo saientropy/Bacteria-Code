@@ -1,3 +1,8 @@
+"""
+Produces a smooth reference curve without noise. Useful for overlaying with
+experimental data to highlight deviations.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

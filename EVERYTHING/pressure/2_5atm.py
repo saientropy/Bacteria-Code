@@ -1,3 +1,8 @@
+"""
+Computes PM and PG tensions at 2.5 atm and plots them. Designed for quick
+simulation of partial engagement.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math

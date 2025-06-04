@@ -1,3 +1,8 @@
+"""
+Short test script for verifying animation settings. Useful for quick
+development checks before rendering the full datasets.
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

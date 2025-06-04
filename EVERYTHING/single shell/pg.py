@@ -1,3 +1,8 @@
+"""
+Plots a single phosphatidylglycerol (PG) tension curve. Helps isolate the PG
+component without PM influence.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

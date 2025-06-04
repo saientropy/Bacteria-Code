@@ -1,3 +1,8 @@
+"""
+Simplified variant of the interactive tension model. Shares the same parameter
+set but removes extra options for a lighter UI.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, RadioButtons, CheckButtons, TextBox

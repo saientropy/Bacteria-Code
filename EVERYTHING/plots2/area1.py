@@ -1,3 +1,8 @@
+"""
+Additional plotting helper used during development. Provides another takeoff
+angle and noise profile.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

@@ -1,3 +1,8 @@
+"""
+General purpose trial file with helper functions for adding noise to curves.
+Useful when prototyping plotting logic.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

@@ -1,3 +1,8 @@
+"""
+Simplified 2D animation of vesicle growth for environments where 3D rendering
+is overkill.
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

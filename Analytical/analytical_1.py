@@ -1,3 +1,9 @@
+"""
+Alternate interactive model with throttling for speed. Provides sliders and
+text boxes to adjust elastic constants and shows updated tension curves without
+lag.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, RadioButtons, CheckButtons, TextBox

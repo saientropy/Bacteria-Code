@@ -1,3 +1,8 @@
+"""
+Loads CSV data and aligns pressure and area measurements. Produces combined
+plots of strain, tension and surface area.
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np

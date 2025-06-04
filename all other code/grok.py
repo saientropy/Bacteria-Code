@@ -1,3 +1,8 @@
+"""
+Scratch space for various plotting experiments. Contains utility functions for
+adding noise and testing curve shapes.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

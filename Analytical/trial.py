@@ -1,3 +1,8 @@
+"""
+Small trial script demonstrating the analytical model code path. Useful for
+quickly tweaking parameters before integrating into the main tool.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, RadioButtons, CheckButtons, TextBox

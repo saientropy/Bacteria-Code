@@ -1,3 +1,8 @@
+"""
+Helper for plotting noisy diameter curves based on a small set of points. Adds
+random wobble to mimic measurement uncertainty.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

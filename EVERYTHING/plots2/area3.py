@@ -1,3 +1,8 @@
+"""
+Third area variant in the secondary folder. Useful when testing multiple noise
+amplitudes.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

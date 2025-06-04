@@ -1,3 +1,8 @@
+"""
+Demonstrates how plot styles can be modified. Changes colours and line widths
+to achieve publication-quality figures.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

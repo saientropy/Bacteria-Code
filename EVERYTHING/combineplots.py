@@ -1,3 +1,8 @@
+"""
+Utility that stitches several plot images into a single figure. Runs other
+scripts, captures their outputs and stacks them for publication.
+"""
+
 import io
 import os
 import sys

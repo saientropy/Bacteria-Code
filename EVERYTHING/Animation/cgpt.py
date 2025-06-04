@@ -1,3 +1,8 @@
+"""
+Creates a Matplotlib animation comparing pressure and area datasets. Reads CSV
+files and plays back the curves using the TkAgg backend.
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

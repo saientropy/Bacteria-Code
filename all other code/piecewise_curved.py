@@ -1,3 +1,8 @@
+"""
+Version of piecewise.py that uses smooth curves instead of sharp joins.
+Demonstrates solving for tension with continuous derivatives.
+"""
+
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt

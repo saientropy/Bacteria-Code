@@ -1,3 +1,8 @@
+"""
+Runs a short calculation for 2 atm pressure and renders the resulting tension
+curves.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math

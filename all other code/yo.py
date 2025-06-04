@@ -1,3 +1,8 @@
+"""
+Mixed utilities for exploring curve manipulation and file output. Contains
+simple functions for adding noise and writing CSV files.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import csv

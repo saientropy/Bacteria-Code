@@ -1,3 +1,8 @@
+"""
+Generates a 3.5 atm pressure curve. Allows direct comparison with the 2.5 and
+4.5 atm cases.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import csv

@@ -1,3 +1,8 @@
+"""
+Computes parameter sweeps for finite element analysis. Iterates over stiffness
+values and outputs the corresponding pressure curves.
+"""
+
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt

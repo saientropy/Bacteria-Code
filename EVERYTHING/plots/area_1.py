@@ -1,3 +1,8 @@
+"""
+Helper for generating wobbly area curves. Serves as the first variant in a set
+of slightly different plotting routines.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

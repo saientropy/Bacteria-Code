@@ -1,3 +1,8 @@
+"""
+Plots a single phosphatidylethanolamine (PM) tension curve. Illustrates the
+shape of the PM contribution alone.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math

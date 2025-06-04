@@ -1,3 +1,8 @@
+"""
+Plots surface area vs tension for a 25° takeoff angle. Adds random noise so the
+curve appears less perfectly smooth.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math
