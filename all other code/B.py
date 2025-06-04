@@ -1,3 +1,8 @@
+"""
+Solves coupled strain-pressure equations with SciPy's fsolve. Plots the
+resulting strain and tension curves.
+"""
+
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt

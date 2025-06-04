@@ -1,3 +1,8 @@
+"""
+Generates noisy area curves for a 35° takeoff scenario. Helps visualise how the
+PM engages at higher angles.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math

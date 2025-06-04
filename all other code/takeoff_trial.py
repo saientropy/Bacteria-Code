@@ -1,3 +1,8 @@
+"""
+Tests how different takeoff angles affect the wobbly curve output. Tweaks
+Matplotlib styles for a cleaner look.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

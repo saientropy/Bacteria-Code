@@ -1,3 +1,8 @@
+"""
+Animates the expansion of a spherical vesicle in 3D using data from CSV files.
+Displays radius changes frame by frame.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation

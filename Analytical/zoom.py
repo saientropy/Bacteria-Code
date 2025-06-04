@@ -1,3 +1,8 @@
+"""
+Helper module that adds mouse-controlled zooming to the interactive plots. Lets
+users inspect fine details of the tension curves.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, RadioButtons, CheckButtons, TextBox

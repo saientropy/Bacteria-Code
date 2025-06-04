@@ -1,3 +1,8 @@
+"""
+Second variant of the area plotting function. Adjusts the noise model and slope
+to experiment with fit quality.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

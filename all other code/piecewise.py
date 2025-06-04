@@ -1,3 +1,8 @@
+"""
+Generates piecewise linear curves for the pressure model. Allows quick
+adjustments of stiffness parameters and thresholds.
+"""
+
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt

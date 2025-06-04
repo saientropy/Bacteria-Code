@@ -1,3 +1,9 @@
+"""
+Interactive slider application for exploring membrane mechanics. The script
+calculates cell-wall and membrane tensions from user-controlled parameters
+using Matplotlib widgets. Curves update in real time as sliders are moved.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, RadioButtons, CheckButtons, TextBox

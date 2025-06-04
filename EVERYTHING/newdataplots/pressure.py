@@ -1,3 +1,8 @@
+"""
+Companion script to area.py that focuses on pressure plots. Reads the same CSV
+files and shows the tension curves against pressure.
+"""
+
 import os
 # Disable modules that may be causing compatibility issues (without terminal commands)
 os.environ["NUMEXPR_DISABLE"] = "1"

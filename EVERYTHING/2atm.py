@@ -1,3 +1,8 @@
+"""
+Generates wobbly pressure/strain data at 2 atm and plots the resulting curves.
+Illustrates how tension behaves around a fixed takeoff angle.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math

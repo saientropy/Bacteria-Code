@@ -1,3 +1,8 @@
+"""
+Plots PM and PG curves at a 2.5 atm takeoff point. Writes the noisy results to
+CSV for later use.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import csv

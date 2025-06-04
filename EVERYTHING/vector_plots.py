@@ -1,3 +1,8 @@
+"""
+Runs a sequence of plotting scripts and saves their images. Useful for building
+vector figures from multiple sources.
+"""
+
 import io
 import os
 import sys
@@ -114,4 +119,3 @@ except OSError:
 # (Optional) pop up the PDF in your default viewer if you like:
 # os.system("open combined_plots.pdf")  # macOS
 # os.system("xdg-open combined_plots.pdf")  # Linux
-

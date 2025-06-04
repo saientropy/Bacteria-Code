@@ -1,3 +1,8 @@
+"""
+Minimal example showing how to animate a rotating vector plot. Serves as a
+sandbox for experimenting with Matplotlib's animation tools.
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

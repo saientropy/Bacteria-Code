@@ -1,3 +1,8 @@
+"""
+Similar to the other pressure scripts but for a 3 atm range. Generates data and
+a wobbly curve plot.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math

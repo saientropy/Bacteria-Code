@@ -1,3 +1,8 @@
+"""
+Loads a new dataset and plots surface area changes with pressure. Includes
+scaling factors and noise to match experimental observations.
+"""
+
 import os
 # Disable modules that may be causing compatibility issues (without terminal commands)
 os.environ["NUMEXPR_DISABLE"] = "1"

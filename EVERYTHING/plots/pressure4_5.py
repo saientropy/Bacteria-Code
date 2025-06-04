@@ -1,3 +1,8 @@
+"""
+Creates pressure curves at 4.5 atm to visualise extreme conditions. Shares code
+with the lower-pressure scripts.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import csv

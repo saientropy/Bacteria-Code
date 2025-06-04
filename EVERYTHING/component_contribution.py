@@ -1,3 +1,8 @@
+"""
+Reads tension data and computes how much each cell-wall component contributes.
+Produces bar charts showing PM vs PG percentages across pressure.
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np

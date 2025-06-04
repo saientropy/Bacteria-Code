@@ -1,3 +1,8 @@
+"""
+Blender automation script that sets up a simple scene and animates cell
+expansion. Uses the Cycles engine to render frames for a full 3D movie.
+"""
+
 import bpy
 import math
 import bmesh

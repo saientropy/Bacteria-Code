@@ -1,3 +1,8 @@
+"""
+Another area plotting experiment with slightly different parameters. Helps
+assess reproducibility of the wobble algorithm.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

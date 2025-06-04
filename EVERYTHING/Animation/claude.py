@@ -1,3 +1,8 @@
+"""
+Alternative animation routine focused on rapid prototyping. Plots evolving
+tension curves to the screen for quick inspection.
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
